@@ -1,0 +1,141 @@
+<?php
+class Login {
+    public $nomeUser;
+    public $email;
+    public $estaAtivo;
+    public $dataCriacao;
+    private $senhaHash;
+
+    // Método para definir/alterar a senha
+    public function setSenha($senha) {
+        $this->senhaHash = password_hash($senha, PASSWORD_DEFAULT);
+    }
+
+    // Método para verificar se a senha digitada está correta
+    public function verificarSenha($senhaDigitada) {
+        return password_verify($senhaDigitada, $this->senhaHash);
+    }
+
+    // Método para exibir perfil sem exibir a senha
+    public function exibirPerfil() {
+        echo "<h3>📌 Perfil do Usuário</h3>";
+        echo "Nome do usuário: $this->nomeUser<br>";
+        echo "E-mail: $this->email<br>";
+        echo "Status: " . $this->getStatus() . "<br>";
+        echo "Data de Criação: $this->dataCriacao<br>";
+    }
+
+    // Métodos para ativar/desativar conta
+    public function desativarConta() {
+        $this->estaAtivo = "Desativado";
+    }
+
+    public function reativarConta() {
+        $this->estaAtivo = "Ativo";
+    }
+
+    // Getter para status
+    public function getStatus() {
+        return $this->estaAtivo;
+    }
+
+    // Método para alterar a senha com confirmação
+    public function alterarSenha($novaSenha, $confirmacao) {
+        if (strtolower($confirmacao) == "sim") {
+            $this->setSenha($novaSenha);
+            echo "<br>Senha alterada com sucesso! ✅<br>";
+        } else {
+            echo "<br>A senha não foi alterada. ❌<br>";
+        }
+    }
+}
+
+// ----------------- PROCESSANDO FORMULÁRIOS -----------------
+$log1 = null;
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Formulário de cadastro
+    if (isset($_POST["nome"])) {
+        $log1 = new Login();
+        $log1->nomeUser = $_POST["nome"];
+        $log1->email = $_POST["email"];
+        $log1->setSenha($_POST["senha"]);
+        $log1->dataCriacao = $_POST["dataCriacao"];
+        $log1->reativarConta();
+    }
+
+    // Formulário de alteração de senha
+    if (isset($_POST["novaSenha"]) && isset($_POST["confirmar"])) {
+        if ($log1 !== null) {
+            $log1->alterarSenha($_POST["novaSenha"], $_POST["confirmar"]);
+        }
+    }
+
+    // Formulário para desativar conta
+    if (isset($_POST["desativarConta"])) {
+        if ($log1 !== null) {
+            $log1->desativarConta();
+            echo "<br>Conta desativada com sucesso! ✅<br>";
+        }
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Gerenciar Conta</title>
+</head>
+<body>
+    <h2>Cadastro de Usuário</h2>
+    <form method="POST">
+        <label>Nome:</label><br>
+        <input type="text" name="nome" required><br><br>
+
+        <label>E-mail:</label><br>
+        <input type="email" name="email" required><br><br>
+
+        <label>Senha:</label><br>
+        <input type="password" name="senha" required><br><br>
+
+        <label>Data de Criação:</label><br>
+        <input type="date" name="dataCriacao" required><br><br>
+
+        <input type="submit" value="Criar Conta">
+    </form>
+
+    <?php
+    // Se o usuário foi criado, exibir perfil e opções de gerenciar conta
+    if ($log1 !== null) {
+        echo "<hr>";
+        $log1->exibirPerfil();
+        ?>
+
+        <!-- Formulário para alterar senha -->
+        <h3>Alterar Senha</h3>
+        <form method="POST">
+            <label>Nova Senha:</label><br>
+            <input type="password" name="novaSenha" required><br><br>
+
+            <label>Deseja alterar a senha?</label><br>
+            <select name="confirmar" required>
+                <option value="sim">Sim</option>
+                <option value="não">Não</option>
+            </select><br><br>
+
+            <input type="submit" value="Alterar Senha">
+        </form>
+
+        <!-- Formulário para desativar conta -->
+        <h3>Desativar Conta</h3>
+        <form method="POST">
+            <input type="hidden" name="desativarConta" value="1">
+            <input type="submit" value="Desativar Conta">
+        </form>
+
+        <?php
+    }
+    ?>
+</body>
+</html>
